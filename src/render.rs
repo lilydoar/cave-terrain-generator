@@ -70,7 +70,7 @@ pub fn render_square(frame: &mut [u8], x: usize, y: usize, size: usize, color: &
 // Render a grid of squares
 // Set each square's color using it's scalar field value
 pub fn render_scalar_field(frame: &mut [u8], terrain: &Terrain) {
-    let scalar_field = &terrain.scalar_field;
+    let field = &terrain.scalar_field;
 
     let mut square_size = SCREEN_HEIGHT / terrain.height;
     if SCREEN_WIDTH < SCREEN_HEIGHT {
@@ -82,7 +82,28 @@ pub fn render_scalar_field(frame: &mut [u8], terrain: &Terrain) {
             let x = (col as f64 * square_size as f64).round() as usize;
             let y = (row as f64 * square_size as f64).round() as usize;
 
-            let alpha = (scalar_field[row][col] * 255.0).round() as u8;
+            let alpha = (field[row][col] * 255.0).round() as u8;
+            let color = [alpha, alpha, alpha, 255];
+
+            render_square(frame, x, y, square_size, &color)
+        }
+    }
+}
+
+pub fn render_thresholded_field(frame: &mut [u8], terrain: &Terrain) {
+    let field = &terrain.thresholded_field;
+
+    let mut square_size = SCREEN_HEIGHT / terrain.height;
+    if SCREEN_WIDTH < SCREEN_HEIGHT {
+        square_size = SCREEN_WIDTH / terrain.width;
+    }
+
+    for row in 0..terrain.height {
+        for col in 0..terrain.width {
+            let x = (col as f64 * square_size as f64).round() as usize;
+            let y = (row as f64 * square_size as f64).round() as usize;
+
+            let alpha = (field[row][col] * 255.0).round() as u8;
             let color = [alpha, alpha, alpha, 255];
 
             render_square(frame, x, y, square_size, &color)
