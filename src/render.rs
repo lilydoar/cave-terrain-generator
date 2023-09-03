@@ -67,8 +67,6 @@ pub fn render_square(frame: &mut [u8], x: usize, y: usize, size: usize, color: &
     }
 }
 
-// Render a grid of squares
-// Set each square's color using it's scalar field value
 pub fn render_scalar_field(frame: &mut [u8], terrain: &Terrain) {
     let field = &terrain.scalar_field;
 
@@ -103,7 +101,7 @@ pub fn render_thresholded_field(frame: &mut [u8], terrain: &Terrain) {
             let x = (col as f64 * square_size as f64).round() as usize;
             let y = (row as f64 * square_size as f64).round() as usize;
 
-            let alpha = (field[row][col] * 255.0).round() as u8;
+            let alpha = field[row][col] * 255;
             let color = [alpha, alpha, alpha, 255];
 
             render_square(frame, x, y, square_size, &color)
