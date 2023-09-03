@@ -1,6 +1,6 @@
-use color::WHITE;
+use color::{BLACK, WHITE};
 use pixels::{Pixels, SurfaceTexture};
-use render::{render_grid, render_scalar_field, render_thresholded_field};
+use render::{clear_frame, render_grid, render_scalar_field, render_thresholded_field};
 use terrain::Terrain;
 use winit::{
     dpi::LogicalSize,
@@ -19,6 +19,8 @@ const SCREEN_HEIGHT: usize = (SCREEN_WIDTH as f64 / SCREEN_ASPECT_RATIO) as usiz
 const PIXEL_SIZE: usize = 2;
 
 fn main() {
+    env_logger::init();
+
     // Rendering
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
@@ -53,6 +55,7 @@ fn main() {
         Event::RedrawRequested(_) => {
             let frame = pixels.frame_mut();
 
+            clear_frame(frame, &BLACK);
             // render_grid(frame, 50, &WHITE);
             // render_scalar_field(frame, &terrain);
             render_thresholded_field(frame, &terrain);
