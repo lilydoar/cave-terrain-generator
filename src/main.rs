@@ -1,6 +1,6 @@
 use color::WHITE;
 use pixels::{Pixels, SurfaceTexture};
-use render::{render_grid, render_scalar_field};
+use render::{render_grid, render_scalar_field, render_thresholded_field};
 use terrain::Terrain;
 use winit::{
     dpi::LogicalSize,
@@ -54,7 +54,8 @@ fn main() {
             let frame = pixels.frame_mut();
 
             // render_grid(frame, 50, &WHITE);
-            render_scalar_field(frame, &terrain);
+            // render_scalar_field(frame, &terrain);
+            render_thresholded_field(frame, &terrain);
 
             pixels.render().unwrap();
         }
