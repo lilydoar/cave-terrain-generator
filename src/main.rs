@@ -1,6 +1,9 @@
-use color::{BLACK, WHITE};
+use color::{BLACK, RED, WHITE};
 use pixels::{Pixels, SurfaceTexture};
-use render::{clear_frame, render_grid, render_scalar_field, render_thresholded_field};
+use render::{
+    clear_frame, render_grid, render_scalar_field, render_terrain, render_thresholded_field,
+    set_row,
+};
 use terrain::Terrain;
 use winit::{
     dpi::LogicalSize,
@@ -13,10 +16,10 @@ mod color;
 mod render;
 mod terrain;
 
-const SCREEN_ASPECT_RATIO: f64 = 4.0 / 3.0;
-const SCREEN_WIDTH: usize = 512;
+const SCREEN_ASPECT_RATIO: f64 = 1.0;
+const SCREEN_WIDTH: usize = 900;
 const SCREEN_HEIGHT: usize = (SCREEN_WIDTH as f64 / SCREEN_ASPECT_RATIO) as usize;
-const PIXEL_SIZE: usize = 2;
+const PIXEL_SIZE: usize = 1;
 
 fn main() {
     env_logger::init();
@@ -55,10 +58,13 @@ fn main() {
         Event::RedrawRequested(_) => {
             let frame = pixels.frame_mut();
 
-            clear_frame(frame, &BLACK);
+            clear_frame(frame, &WHITE);
+            // set_row(frame, 10, &WHITE);
+            // set_row(frame, 50, &WHITE);
             // render_grid(frame, 50, &WHITE);
             // render_scalar_field(frame, &terrain);
-            render_thresholded_field(frame, &terrain);
+            // render_thresholded_field(frame, &terrain);
+            render_terrain(frame, &terrain, &BLACK);
 
             pixels.render().unwrap();
         }
