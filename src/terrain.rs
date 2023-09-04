@@ -8,7 +8,6 @@ pub struct Terrain {
     pub width: usize,
     pub height: usize,
     pub scalar_field: ScalarField,
-    pub thresholded_field: IndexField,
     pub index_grid: IndexField,
     pub cell_edges: Vec<Vec<f64>>,
 }
@@ -31,13 +30,10 @@ impl Terrain {
 
         for row in 0..height {
             for col in 0..width {
-                scalar_field[row][col] = rng.gen();
+                // scalar_field[row][col] = rng.gen();
+                scalar_field[row][col] = 1.0;
             }
         }
-        debug!("scalar_field: {:?}", scalar_field);
-
-        let thresholded_field = threshold(&scalar_field, 0.5);
-        debug!("thresholded_field: {:?}", thresholded_field);
 
         let mut index_grid = Vec::with_capacity(height - 1);
         for _ in 0..height - 1 {
@@ -47,22 +43,6 @@ impl Terrain {
             }
             index_grid.push(row);
         }
-
-        for row in 0..height - 1 {
-            for col in 0..width - 1 {
-                // Compose 4 bits at corners of each cell to build a binary index
-                // Start top left and rotate clockwise
-                // Build most significant bit to least significant bit
-                let mut index = 0;
-                index |= thresholded_field[row][col] << 3;
-                index |= thresholded_field[row][col + 1] << 2;
-                index |= thresholded_field[row + 1][col + 1] << 1;
-                index |= thresholded_field[row + 1][col] << 0;
-
-                index_grid[row][col] = index;
-            }
-        }
-        debug!("index_grid: {:?}", index_grid);
 
         let cell_edges = vec![
             vec![],
@@ -95,18 +75,51 @@ impl Terrain {
             vec![0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0],
         ];
 
-        Self {
+        let mut new_terrain = Self {
             width,
             height,
             scalar_field,
-            thresholded_field,
             index_grid,
             cell_edges,
+        };
+
+        Self::construct_index_grid(&mut new_terrain, 0.5);
+
+        return new_terrain;
+    }
+
+    pub fn modify_scalar_field(&mut self, row: usize, col: usize, new_scalar: f64) {
+        debug_assert!(new_scalar >= 0.0 && new_scalar <= 1.0);
+
+        self.scalar_field[row][col] = new_scalar;
+        self.construct_index_grid(0.5);
+    }
+
+    fn construct_index_grid(&mut self, threshold: f64) {
+        debug_assert!(threshold >= 0.0 && threshold <= 1.0);
+
+        let thresholded_field = threshold_field(&self.scalar_field, 0.5);
+        debug!("thresholded_field: {:?}", thresholded_field);
+
+        for row in 0..self.height - 1 {
+            for col in 0..self.width - 1 {
+                // Compose 4 bits at corners of each cell to build a binary index
+                // Start top left and rotate clockwise
+                // Build most significant bit to least significant bit
+                let mut index = 0;
+                index |= thresholded_field[row][col] << 3;
+                index |= thresholded_field[row][col + 1] << 2;
+                index |= thresholded_field[row + 1][col + 1] << 1;
+                index |= thresholded_field[row + 1][col] << 0;
+
+                self.index_grid[row][col] = index;
+            }
         }
+        debug!("index_grid: {:?}", self.index_grid);
     }
 }
 
-fn threshold(scalar_field: &ScalarField, threshold: f64) -> IndexField {
+fn threshold_field(scalar_field: &ScalarField, threshold: f64) -> IndexField {
     let mut new_field = Vec::with_capacity(scalar_field.len());
     for _ in 0..scalar_field.len() {
         let mut row = Vec::<u8>::with_capacity(scalar_field[0].len());
