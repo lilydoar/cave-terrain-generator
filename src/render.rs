@@ -108,3 +108,74 @@ pub fn render_thresholded_field(frame: &mut [u8], terrain: &Terrain) {
         }
     }
 }
+
+fn barycentric(
+    x: f64,
+    y: f64,
+    x1: f64,
+    y1: f64,
+    x2: f64,
+    y2: f64,
+    x3: f64,
+    y3: f64,
+) -> (f64, f64, f64) {
+    let lambda1 = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3))
+        / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+    let lambda2 = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3))
+        / ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+    let lambda3 = 1.0 - lambda1 - lambda2;
+
+    (lambda1, lambda2, lambda3)
+}
+
+pub fn render_triangle(
+    frame: &mut [u8],
+    x_0: usize,
+    y_0: usize,
+    x_1: usize,
+    y_1: usize,
+    x_2: usize,
+    y_2: usize,
+    color: &[u8; 4],
+) {
+    // TODO Fix error with pixels missing on the left edge of the triangle.
+    // I think this is a problem with rounding and floating point arithemtic.
+
+    let col_start = x_0.min(x_1).min(x_2);
+    let row_start = y_0.min(y_1).min(y_2);
+    if col_start >= SCREEN_WIDTH || row_start >= SCREEN_HEIGHT {
+        return;
+    }
+
+    let mut col_end = x_0.max(x_1).max(x_2);
+    if col_end >= SCREEN_WIDTH {
+        col_end = SCREEN_WIDTH - 1;
+    }
+
+    let mut row_end = y_0.max(y_1).max(y_2);
+    if row_end >= SCREEN_HEIGHT {
+        row_end = SCREEN_HEIGHT - 1;
+    }
+
+    for row in row_start..row_end {
+        for col in col_start..col_end {
+            let (l1, l2, l3) = barycentric(
+                col as f64, row as f64, x_0 as f64, y_0 as f64, x_1 as f64, y_1 as f64, x_2 as f64,
+                y_2 as f64,
+            );
+
+            if l1 < 0.0 || l1 > 1.0 {
+                continue;
+            }
+            if l2 < 0.0 || l2 > 1.0 {
+                continue;
+            }
+            if l3 < 0.0 || l3 > 1.0 {
+                continue;
+            }
+
+            set_pixel(frame, col, row, color);
+        }
+    }
+}
+
