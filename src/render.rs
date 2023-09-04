@@ -1,8 +1,4 @@
-use crate::{
-    color::{BLACK, RED},
-    terrain::Terrain,
-    SCREEN_HEIGHT, SCREEN_WIDTH,
-};
+use crate::{terrain::Terrain, SCREEN_HEIGHT, SCREEN_WIDTH};
 
 pub fn clear_frame(frame: &mut [u8], color: &[u8; 4]) {
     for pixel in frame.chunks_exact_mut(4) {
@@ -85,27 +81,6 @@ pub fn render_scalar_field(frame: &mut [u8], terrain: &Terrain) {
             let y = (row as f64 * square_size as f64).round() as usize;
 
             let alpha = (field[row][col] * 255.0).round() as u8;
-            let color = [alpha, alpha, alpha, 255];
-
-            render_square(frame, x, y, square_size, &color)
-        }
-    }
-}
-
-pub fn render_thresholded_field(frame: &mut [u8], terrain: &Terrain) {
-    let field = &terrain.thresholded_field;
-
-    let mut square_size = SCREEN_HEIGHT / terrain.height;
-    if SCREEN_WIDTH < SCREEN_HEIGHT {
-        square_size = SCREEN_WIDTH / terrain.width;
-    }
-
-    for row in 0..terrain.height {
-        for col in 0..terrain.width {
-            let x = (col as f64 * square_size as f64).round() as usize;
-            let y = (row as f64 * square_size as f64).round() as usize;
-
-            let alpha = field[row][col] * 255;
             let color = [alpha, alpha, alpha, 255];
 
             render_square(frame, x, y, square_size, &color)
@@ -197,7 +172,6 @@ pub fn render_terrain(frame: &mut [u8], terrain: &Terrain, color: &[u8; 4]) {
             let offset_x = (col * square_size) as f64;
             let offset_y = (row * square_size) as f64;
 
-            // Render triangle list
             for triangle in triangle_list.chunks(6) {
                 let x_0 = (offset_x + triangle[0] * square_size as f64).round() as usize;
                 let y_0 = (offset_y + triangle[1] * square_size as f64).round() as usize;
@@ -210,6 +184,13 @@ pub fn render_terrain(frame: &mut [u8], terrain: &Terrain, color: &[u8; 4]) {
             }
         }
     }
+}
 
-    render_grid(frame, square_size, &RED);
+pub fn render_terrain_grid(frame: &mut [u8], terrain: &Terrain, color: &[u8; 4]) {
+    let mut square_size = SCREEN_HEIGHT / (terrain.height - 1);
+    if SCREEN_WIDTH < SCREEN_HEIGHT {
+        square_size = SCREEN_WIDTH / (terrain.width - 1);
+    }
+
+    render_grid(frame, square_size, color);
 }
