@@ -1,13 +1,13 @@
 use color::{BLACK, RED, WHITE};
+use log::info;
 use pixels::{Pixels, SurfaceTexture};
 use render::{
-    clear_frame, render_grid, render_scalar_field, render_terrain, render_thresholded_field,
-    set_row,
+    clear_frame, render_grid, render_scalar_field, render_terrain, render_terrain_grid, set_row,
 };
 use terrain::Terrain;
 use winit::{
-    dpi::LogicalSize,
-    event::{Event, WindowEvent},
+    dpi::{LogicalSize, PhysicalPosition},
+    event::{ElementState, Event, MouseButton, WindowEvent},
     event_loop::EventLoop,
     window::WindowBuilder,
 };
@@ -49,8 +49,13 @@ fn main() {
     // World
     let world_width = 10;
     let world_height = 10;
-    let terrain = Terrain::new(world_width, world_height);
+    let grid_size = SCREEN_WIDTH / world_width;
 
+    let mut terrain = Terrain::new(world_width, world_height);
+
+    let mut mouse_pos = PhysicalPosition::new(0.0, 0.0);
+
+    // Event loop
     event_loop.run(move |event, _, control_flow| match event {
         Event::MainEventsCleared => {
             window.request_redraw();
@@ -59,12 +64,8 @@ fn main() {
             let frame = pixels.frame_mut();
 
             clear_frame(frame, &WHITE);
-            // set_row(frame, 10, &WHITE);
-            // set_row(frame, 50, &WHITE);
-            // render_grid(frame, 50, &WHITE);
-            // render_scalar_field(frame, &terrain);
-            // render_thresholded_field(frame, &terrain);
             render_terrain(frame, &terrain, &BLACK);
+            render_terrain_grid(frame, &terrain, &RED);
 
             pixels.render().unwrap();
         }
@@ -73,6 +74,28 @@ fn main() {
             event: window_event,
         } => match window_event {
             WindowEvent::CloseRequested => control_flow.set_exit(),
+            WindowEvent::CursorMoved { position, .. } => {
+                mouse_pos = position;
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                if button == MouseButton::Left && state == ElementState::Pressed {
+                    let (pixel_col, pixel_row) = pixels
+                        .window_pos_to_pixel(mouse_pos.into())
+                        .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                    let grid_row = pixel_row / grid_size;
+                    let grid_col = pixel_col / grid_size;
+
+                    let old_scalar = terrain.scalar_field[grid_row][grid_col];
+
+                    let mut new_scalar = old_scalar - 0.6;
+                    if new_scalar < 0.0 {
+                        new_scalar = 0.0;
+                    }
+
+                    terrain.modify_scalar_field(grid_row, grid_col, new_scalar);
+                }
+            }
             _ => {}
         },
         _ => {}
