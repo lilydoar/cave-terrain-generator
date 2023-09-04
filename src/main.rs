@@ -47,8 +47,8 @@ fn main() {
     .unwrap();
 
     // World
-    let world_width = 10;
-    let world_height = 10;
+    let world_width = 20;
+    let world_height = 20;
     let grid_size = SCREEN_WIDTH / world_width;
 
     let mut terrain = Terrain::new(world_width, world_height);
@@ -65,7 +65,7 @@ fn main() {
 
             clear_frame(frame, &WHITE);
             render_terrain(frame, &terrain, &BLACK);
-            render_terrain_grid(frame, &terrain, &RED);
+            // render_terrain_grid(frame, &terrain, &RED);
 
             pixels.render().unwrap();
         }
@@ -77,7 +77,12 @@ fn main() {
             WindowEvent::CursorMoved { position, .. } => {
                 mouse_pos = position;
             }
-            WindowEvent::MouseInput { state, button, .. } => {
+            WindowEvent::MouseInput {
+                state,
+                button,
+                modifiers,
+                ..
+            } => {
                 if button == MouseButton::Left && state == ElementState::Pressed {
                     let (pixel_col, pixel_row) = pixels
                         .window_pos_to_pixel(mouse_pos.into())
@@ -86,14 +91,11 @@ fn main() {
                     let grid_row = pixel_row / grid_size;
                     let grid_col = pixel_col / grid_size;
 
-                    let old_scalar = terrain.scalar_field[grid_row][grid_col];
-
-                    let mut new_scalar = old_scalar - 0.6;
-                    if new_scalar < 0.0 {
-                        new_scalar = 0.0;
+                    if modifiers.shift() {
+                        terrain.modify_scalar_field(grid_row, grid_col, 1.0);
+                    } else {
+                        terrain.modify_scalar_field(grid_row, grid_col, 0.0);
                     }
-
-                    terrain.modify_scalar_field(grid_row, grid_col, new_scalar);
                 }
             }
             _ => {}
