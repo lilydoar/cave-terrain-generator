@@ -1,4 +1,8 @@
-use crate::{terrain::Terrain, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::{
+    color::{BLACK, RED},
+    terrain::Terrain,
+    SCREEN_HEIGHT, SCREEN_WIDTH,
+};
 
 pub fn clear_frame(frame: &mut [u8], color: &[u8; 4]) {
     for pixel in frame.chunks_exact_mut(4) {
@@ -179,3 +183,33 @@ pub fn render_triangle(
     }
 }
 
+pub fn render_terrain(frame: &mut [u8], terrain: &Terrain, color: &[u8; 4]) {
+    let mut square_size = SCREEN_HEIGHT / (terrain.height - 1);
+    if SCREEN_WIDTH < SCREEN_HEIGHT {
+        square_size = SCREEN_WIDTH / (terrain.width - 1);
+    }
+
+    for row in 0..terrain.height - 1 {
+        for col in 0..terrain.width - 1 {
+            let index = terrain.index_grid[row][col] as usize;
+            let triangle_list = &terrain.cell_edges[index];
+
+            let offset_x = (col * square_size) as f64;
+            let offset_y = (row * square_size) as f64;
+
+            // Render triangle list
+            for triangle in triangle_list.chunks(6) {
+                let x_0 = (offset_x + triangle[0] * square_size as f64).round() as usize;
+                let y_0 = (offset_y + triangle[1] * square_size as f64).round() as usize;
+                let x_1 = (offset_x + triangle[2] * square_size as f64).round() as usize;
+                let y_1 = (offset_y + triangle[3] * square_size as f64).round() as usize;
+                let x_2 = (offset_x + triangle[4] * square_size as f64).round() as usize;
+                let y_2 = (offset_y + triangle[5] * square_size as f64).round() as usize;
+
+                render_triangle(frame, x_0, y_0, x_1, y_1, x_2, y_2, color);
+            }
+        }
+    }
+
+    render_grid(frame, square_size, &RED);
+}
