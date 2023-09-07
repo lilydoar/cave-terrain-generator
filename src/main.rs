@@ -45,11 +45,12 @@ fn main() {
 
     // Input
     let mut mouse_pos = PhysicalPosition::new(0.0, 0.0);
+    let mut mouse_pressed = false;
     let mut shift_pressed = false;
 
     // World
-    let world_width = 20;
-    let world_height = 20;
+    let world_width = 40;
+    let world_height = 40;
     let grid_size = SCREEN_WIDTH / world_width;
 
     let mut terrain = Terrain::new(world_width, world_height);
@@ -57,6 +58,21 @@ fn main() {
     // Event loop
     event_loop.run(move |event, _, control_flow| match event {
         Event::MainEventsCleared => {
+            if mouse_pressed {
+                let (pixel_col, pixel_row) = pixels
+                    .window_pos_to_pixel(mouse_pos.into())
+                    .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                let grid_row = pixel_row / grid_size;
+                let grid_col = pixel_col / grid_size;
+
+                if shift_pressed {
+                    terrain.modify_scalar_field(grid_row, grid_col, 1.0);
+                } else {
+                    terrain.modify_scalar_field(grid_row, grid_col, 0.0);
+                }
+            }
+
             window.request_redraw();
         }
         Event::RedrawRequested(_) => {
@@ -80,22 +96,8 @@ fn main() {
                 shift_pressed = modifier_state.shift();
             }
             WindowEvent::MouseInput { state, button, .. } => {
-                if button == MouseButton::Left && state == ElementState::Pressed {
-                    let (pixel_col, pixel_row) = pixels
-                        .window_pos_to_pixel(mouse_pos.into())
-                        .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
-
-                    let grid_row = pixel_row / grid_size;
-                    let grid_col = pixel_col / grid_size;
-
-                    if shift_pressed {
-                        terrain.modify_scalar_field(grid_row, grid_col, 1.0);
-                    } else {
-                        terrain.modify_scalar_field(grid_row, grid_col, 0.0);
-                    }
-                }
+                mouse_pressed = button == MouseButton::Left && state == ElementState::Pressed;
             }
-
             _ => {}
         },
         _ => {}
