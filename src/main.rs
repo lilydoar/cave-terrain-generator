@@ -78,8 +78,13 @@ fn main() {
         Event::RedrawRequested(_) => {
             let frame = pixels.frame_mut();
 
-            clear_frame(frame, &WHITE);
-            render_terrain(frame, &terrain, &BLACK);
+            // Battleship gray: [135, 142, 136, 255]
+            // Liver: [114, 87, 82, 255]
+            // Sepia: [93, 58, 0, 255]
+            // Van Dyke: [71, 45, 35, 255]
+
+            clear_frame(frame, &[135, 142, 136, 255]);
+            render_terrain(frame, &terrain, &[71, 45, 35, 255]);
             // render_terrain_grid(frame, &terrain, &RED);
 
             pixels.render().unwrap();
