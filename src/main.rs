@@ -1,9 +1,6 @@
-use color::{BLACK, RED, WHITE};
-use log::info;
+use color::{BLACK, WHITE};
 use pixels::{Pixels, SurfaceTexture};
-use render::{
-    clear_frame, render_grid, render_scalar_field, render_terrain, render_terrain_grid, set_row,
-};
+use render::{clear_frame, render_terrain};
 use terrain::Terrain;
 use winit::{
     dpi::{LogicalSize, PhysicalPosition},
@@ -46,14 +43,16 @@ fn main() {
     )
     .unwrap();
 
+    // Input
+    let mut mouse_pos = PhysicalPosition::new(0.0, 0.0);
+    let mut shift_pressed = false;
+
     // World
     let world_width = 20;
     let world_height = 20;
     let grid_size = SCREEN_WIDTH / world_width;
 
     let mut terrain = Terrain::new(world_width, world_height);
-
-    let mut mouse_pos = PhysicalPosition::new(0.0, 0.0);
 
     // Event loop
     event_loop.run(move |event, _, control_flow| match event {
@@ -77,12 +76,10 @@ fn main() {
             WindowEvent::CursorMoved { position, .. } => {
                 mouse_pos = position;
             }
-            WindowEvent::MouseInput {
-                state,
-                button,
-                modifiers,
-                ..
-            } => {
+            WindowEvent::ModifiersChanged(modifier_state) => {
+                shift_pressed = modifier_state.shift();
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
                 if button == MouseButton::Left && state == ElementState::Pressed {
                     let (pixel_col, pixel_row) = pixels
                         .window_pos_to_pixel(mouse_pos.into())
@@ -91,13 +88,14 @@ fn main() {
                     let grid_row = pixel_row / grid_size;
                     let grid_col = pixel_col / grid_size;
 
-                    if modifiers.shift() {
+                    if shift_pressed {
                         terrain.modify_scalar_field(grid_row, grid_col, 1.0);
                     } else {
                         terrain.modify_scalar_field(grid_row, grid_col, 0.0);
                     }
                 }
             }
+
             _ => {}
         },
         _ => {}
