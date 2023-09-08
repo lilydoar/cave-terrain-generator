@@ -1,10 +1,10 @@
-use color::{BLACK, WHITE};
+use color::RED;
 use pixels::{Pixels, SurfaceTexture};
-use render::{clear_frame, render_terrain};
+use render::{clear_frame, render_terrain, render_terrain_grid};
 use terrain::Terrain;
 use winit::{
     dpi::{LogicalSize, PhysicalPosition},
-    event::{ElementState, Event, MouseButton, WindowEvent},
+    event::{ElementState, Event, MouseButton, VirtualKeyCode, WindowEvent},
     event_loop::EventLoop,
     window::WindowBuilder,
 };
@@ -46,14 +46,15 @@ fn main() {
     // Input
     let mut mouse_pos = PhysicalPosition::new(0.0, 0.0);
     let mut mouse_pressed = false;
-    let mut shift_pressed = false;
 
     // World
     let world_width = 40;
     let world_height = 40;
     let grid_size = SCREEN_WIDTH / world_width;
-
     let mut terrain = Terrain::new(world_width, world_height);
+
+    let mut add_mode = true;
+    let mut show_grid = false;
 
     // Event loop
     event_loop.run(move |event, _, control_flow| match event {
@@ -66,7 +67,7 @@ fn main() {
                 let grid_row = pixel_row / grid_size;
                 let grid_col = pixel_col / grid_size;
 
-                if shift_pressed {
+                if add_mode {
                     terrain.modify_scalar_field(grid_row, grid_col, 1.0);
                 } else {
                     terrain.modify_scalar_field(grid_row, grid_col, 0.0);
@@ -84,24 +85,37 @@ fn main() {
             // Van Dyke: [71, 45, 35, 255]
 
             clear_frame(frame, &[135, 142, 136, 255]);
+
             render_terrain(frame, &terrain, &[71, 45, 35, 255]);
-            // render_terrain_grid(frame, &terrain, &RED);
+
+            if show_grid {
+                render_terrain_grid(frame, &terrain, &RED);
+            }
 
             pixels.render().unwrap();
         }
         Event::WindowEvent {
-            window_id: _,
             event: window_event,
+            ..
         } => match window_event {
             WindowEvent::CloseRequested => control_flow.set_exit(),
             WindowEvent::CursorMoved { position, .. } => {
                 mouse_pos = position;
             }
-            WindowEvent::ModifiersChanged(modifier_state) => {
-                shift_pressed = modifier_state.shift();
-            }
             WindowEvent::MouseInput { state, button, .. } => {
                 mouse_pressed = button == MouseButton::Left && state == ElementState::Pressed;
+            }
+            WindowEvent::KeyboardInput { input, .. } => {
+                if input.state != ElementState::Pressed {
+                    return;
+                }
+
+                match input.virtual_keycode {
+                    Some(VirtualKeyCode::A) => add_mode = true,
+                    Some(VirtualKeyCode::S) => add_mode = false,
+                    Some(VirtualKeyCode::G) => show_grid = !show_grid,
+                    _ => {}
+                }
             }
             _ => {}
         },
