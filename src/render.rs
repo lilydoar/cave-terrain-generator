@@ -1,78 +1,78 @@
-use crate::{terrain::Terrain, SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::{terrain::Terrain, window::Screen};
 
-pub fn clear_frame(frame: &mut [u8], color: &[u8; 4]) {
-    for pixel in frame.chunks_exact_mut(4) {
+pub fn clear_frame(screen: &mut Screen, color: &[u8; 4]) {
+    for pixel in screen.frame_mut().chunks_exact_mut(4) {
         pixel.copy_from_slice(color);
     }
 }
 
-pub fn set_pixel(frame: &mut [u8], x: usize, y: usize, color: &[u8; 4]) {
-    debug_assert!(x < SCREEN_WIDTH && y < SCREEN_HEIGHT);
+pub fn set_pixel(screen: &mut Screen, x: usize, y: usize, color: &[u8; 4]) {
+    debug_assert!(x < screen.width() && y < screen.height());
 
-    let index = (y * SCREEN_WIDTH + x) * 4;
-    frame[index..index + 4].copy_from_slice(color);
+    let index = (y * screen.width() + x) * 4;
+    screen.frame_mut()[index..index + 4].copy_from_slice(color);
 }
 
-pub fn set_row(frame: &mut [u8], y: usize, color: &[u8; 4]) {
-    debug_assert!(y < SCREEN_HEIGHT);
+pub fn set_row(screen: &mut Screen, y: usize, color: &[u8; 4]) {
+    debug_assert!(y < screen.height());
 
-    for x in 0..(SCREEN_WIDTH - 1) {
-        set_pixel(frame, x, y, color);
+    for x in 0..(screen.width() - 1) {
+        set_pixel(screen, x, y, color);
     }
 }
 
-pub fn set_col(frame: &mut [u8], x: usize, color: &[u8; 4]) {
-    debug_assert!(x < SCREEN_WIDTH);
+pub fn set_col(screen: &mut Screen, x: usize, color: &[u8; 4]) {
+    debug_assert!(x < screen.width());
 
-    for y in 0..(SCREEN_HEIGHT - 1) {
-        set_pixel(frame, x, y, color);
+    for y in 0..(screen.height() - 1) {
+        set_pixel(screen, x, y, color);
     }
 }
 
-pub fn render_grid(frame: &mut [u8], step_size: usize, color: &[u8; 4]) {
+pub fn render_grid(screen: &mut Screen, step_size: usize, color: &[u8; 4]) {
     // Draw rows
-    for y in (0..SCREEN_HEIGHT - 1).step_by(step_size) {
-        set_row(frame, y, color);
+    for y in (0..screen.height() - 1).step_by(step_size) {
+        set_row(screen, y, color);
     }
 
     // Draw coloumns
-    for x in (0..SCREEN_WIDTH - 1).step_by(step_size) {
-        set_col(frame, x, color);
+    for x in (0..screen.width() - 1).step_by(step_size) {
+        set_col(screen, x, color);
     }
 }
 
-pub fn render_square(frame: &mut [u8], x: usize, y: usize, size: usize, color: &[u8; 4]) {
+pub fn render_square(screen: &mut Screen, x: usize, y: usize, size: usize, color: &[u8; 4]) {
     let x_0 = x;
     let y_0 = y;
 
     let mut x_1 = x + size;
     let mut y_1 = y + size;
 
-    if x_0 >= SCREEN_WIDTH || y_0 >= SCREEN_HEIGHT {
+    if x_0 >= screen.width() || y_0 >= screen.height() {
         return;
     }
 
-    if x_1 >= SCREEN_WIDTH {
-        x_1 = SCREEN_WIDTH - 1;
+    if x_1 >= screen.width() {
+        x_1 = screen.width() - 1;
     }
 
-    if y_1 >= SCREEN_HEIGHT {
-        y_1 = SCREEN_WIDTH - 1;
+    if y_1 >= screen.height() {
+        y_1 = screen.width() - 1;
     }
 
     for row in y_0..y_1 {
         for col in x_0..x_1 {
-            set_pixel(frame, col, row, color);
+            set_pixel(screen, col, row, color);
         }
     }
 }
 
-pub fn render_scalar_field(frame: &mut [u8], terrain: &Terrain) {
+pub fn render_scalar_field(screen: &mut Screen, terrain: &Terrain) {
     let field = &terrain.scalar_field;
 
-    let mut square_size = SCREEN_HEIGHT / terrain.height;
-    if SCREEN_WIDTH < SCREEN_HEIGHT {
-        square_size = SCREEN_WIDTH / terrain.width;
+    let mut square_size = screen.height() / terrain.height;
+    if screen.width() < screen.height() {
+        square_size = screen.width() / terrain.width;
     }
 
     for row in 0..terrain.height {
@@ -83,7 +83,7 @@ pub fn render_scalar_field(frame: &mut [u8], terrain: &Terrain) {
             let alpha = (field[row][col] * 255.0).round() as u8;
             let color = [alpha, alpha, alpha, 255];
 
-            render_square(frame, x, y, square_size, &color)
+            render_square(screen, x, y, square_size, &color)
         }
     }
 }
@@ -108,7 +108,7 @@ fn barycentric(
 }
 
 pub fn render_triangle(
-    frame: &mut [u8],
+    screen: &mut Screen,
     x_0: usize,
     y_0: usize,
     x_1: usize,
@@ -122,18 +122,18 @@ pub fn render_triangle(
 
     let col_start = x_0.min(x_1).min(x_2);
     let row_start = y_0.min(y_1).min(y_2);
-    if col_start >= SCREEN_WIDTH || row_start >= SCREEN_HEIGHT {
+    if col_start >= screen.width() || row_start >= screen.height() {
         return;
     }
 
     let mut col_end = x_0.max(x_1).max(x_2);
-    if col_end >= SCREEN_WIDTH {
-        col_end = SCREEN_WIDTH - 1;
+    if col_end >= screen.width() {
+        col_end = screen.width() - 1;
     }
 
     let mut row_end = y_0.max(y_1).max(y_2);
-    if row_end >= SCREEN_HEIGHT {
-        row_end = SCREEN_HEIGHT - 1;
+    if row_end >= screen.height() {
+        row_end = screen.height() - 1;
     }
 
     for row in row_start..row_end {
@@ -153,16 +153,13 @@ pub fn render_triangle(
                 continue;
             }
 
-            set_pixel(frame, col, row, color);
+            set_pixel(screen, col, row, color);
         }
     }
 }
 
-pub fn render_terrain(frame: &mut [u8], terrain: &Terrain, color: &[u8; 4]) {
-    let mut square_size = SCREEN_HEIGHT / (terrain.height - 1);
-    if SCREEN_WIDTH < SCREEN_HEIGHT {
-        square_size = SCREEN_WIDTH / (terrain.width - 1);
-    }
+pub fn render_terrain(screen: &mut Screen, terrain: &Terrain, color: &[u8; 4]) {
+    let square_size = screen.height() / (terrain.height - 1);
 
     for row in 0..terrain.height - 1 {
         for col in 0..terrain.width - 1 {
@@ -180,17 +177,17 @@ pub fn render_terrain(frame: &mut [u8], terrain: &Terrain, color: &[u8; 4]) {
                 let x_2 = (offset_x + triangle[4] * square_size as f64).round() as usize;
                 let y_2 = (offset_y + triangle[5] * square_size as f64).round() as usize;
 
-                render_triangle(frame, x_0, y_0, x_1, y_1, x_2, y_2, color);
+                render_triangle(screen, x_0, y_0, x_1, y_1, x_2, y_2, color);
             }
         }
     }
 }
 
-pub fn render_terrain_grid(frame: &mut [u8], terrain: &Terrain, color: &[u8; 4]) {
-    let mut square_size = SCREEN_HEIGHT / (terrain.height - 1);
-    if SCREEN_WIDTH < SCREEN_HEIGHT {
-        square_size = SCREEN_WIDTH / (terrain.width - 1);
+pub fn render_terrain_grid(screen: &mut Screen, terrain: &Terrain, color: &[u8; 4]) {
+    let mut square_size = screen.height() / (terrain.height - 1);
+    if screen.width() < screen.height() {
+        square_size = screen.width() / (terrain.width - 1);
     }
 
-    render_grid(frame, square_size, color);
+    render_grid(screen, square_size, color);
 }

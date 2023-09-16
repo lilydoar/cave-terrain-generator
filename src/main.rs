@@ -1,47 +1,23 @@
 use color::RED;
-use pixels::{Pixels, SurfaceTexture};
 use render::{clear_frame, render_terrain, render_terrain_grid};
 use terrain::Terrain;
+use window::Window;
 use winit::{
-    dpi::{LogicalSize, PhysicalPosition},
+    dpi::PhysicalPosition,
     event::{ElementState, Event, MouseButton, VirtualKeyCode, WindowEvent},
-    event_loop::EventLoop,
-    window::WindowBuilder,
 };
 
 mod color;
 mod render;
 mod terrain;
-
-const SCREEN_ASPECT_RATIO: f64 = 1.0;
-const SCREEN_WIDTH: usize = 900;
-const SCREEN_HEIGHT: usize = (SCREEN_WIDTH as f64 / SCREEN_ASPECT_RATIO) as usize;
-const PIXEL_SIZE: usize = 1;
+mod window;
 
 fn main() {
     env_logger::init();
 
     // Rendering
-    let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_inner_size(LogicalSize::new(
-            (SCREEN_WIDTH * PIXEL_SIZE) as f64,
-            (SCREEN_HEIGHT * PIXEL_SIZE) as f64,
-        ))
-        .with_resizable(false)
-        .build(&event_loop)
-        .unwrap();
-
-    let mut pixels = Pixels::new(
-        SCREEN_WIDTH as u32,
-        SCREEN_HEIGHT as u32,
-        SurfaceTexture::new(
-            window.inner_size().width,
-            window.inner_size().height,
-            &window,
-        ),
-    )
-    .unwrap();
+    let screen_size = 800;
+    let (mut window, event_loop) = Window::new(screen_size, screen_size, 1);
 
     // Input
     let mut mouse_pos = PhysicalPosition::new(0.0, 0.0);
@@ -50,7 +26,7 @@ fn main() {
     // World
     let world_width = 40;
     let world_height = 40;
-    let grid_size = SCREEN_WIDTH / world_width;
+    let grid_size = screen_size / world_width;
     let mut terrain = Terrain::new(world_width, world_height);
 
     let mut add_mode = true;
@@ -60,9 +36,7 @@ fn main() {
     event_loop.run(move |event, _, control_flow| match event {
         Event::MainEventsCleared => {
             if mouse_pressed {
-                let (pixel_col, pixel_row) = pixels
-                    .window_pos_to_pixel(mouse_pos.into())
-                    .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+                let (pixel_col, pixel_row) = window.screen.window_pos_to_pixel(mouse_pos);
 
                 let grid_row = pixel_row / grid_size;
                 let grid_col = pixel_col / grid_size;
@@ -77,22 +51,20 @@ fn main() {
             window.request_redraw();
         }
         Event::RedrawRequested(_) => {
-            let frame = pixels.frame_mut();
-
             // Battleship gray: [135, 142, 136, 255]
             // Liver: [114, 87, 82, 255]
             // Sepia: [93, 58, 0, 255]
             // Van Dyke: [71, 45, 35, 255]
 
-            clear_frame(frame, &[135, 142, 136, 255]);
+            clear_frame(&mut window.screen, &[135, 142, 136, 255]);
 
-            render_terrain(frame, &terrain, &[71, 45, 35, 255]);
+            render_terrain(&mut window.screen, &terrain, &[71, 45, 35, 255]);
 
             if show_grid {
-                render_terrain_grid(frame, &terrain, &RED);
+                render_terrain_grid(&mut window.screen, &terrain, &RED);
             }
 
-            pixels.render().unwrap();
+            window.screen.draw_frame().unwrap();
         }
         Event::WindowEvent {
             event: window_event,
