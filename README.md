@@ -1,4 +1,4 @@
-# cave-terrarin-generator
+# cave-terrain-generator
 Generate cave terrain using marching squares
 
 ## Controls
