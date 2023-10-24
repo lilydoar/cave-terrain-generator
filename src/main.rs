@@ -54,11 +54,6 @@ fn main() {
             window.request_redraw();
         }
         Event::RedrawRequested(_) => {
-            // Battleship gray: [135, 142, 136, 255]
-            // Liver: [114, 87, 82, 255]
-            // Sepia: [93, 58, 0, 255]
-            // Van Dyke: [71, 45, 35, 255]
-
             clear_frame(&mut window.screen, &[135, 142, 136, 255]);
 
             render_terrain(&mut window.screen, &terrain, &[71, 45, 35, 255]);
