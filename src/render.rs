@@ -163,15 +163,15 @@ pub fn render_triangle(
 }
 
 pub fn render_terrain(screen: &mut Screen, terrain: &Terrain, color: &[u8; 4]) {
-    let square_size = screen.height() / (terrain.height - 1);
+    let square_size = (screen.height() / (terrain.height)) as f64;
 
     for row in 0..terrain.height - 1 {
         for col in 0..terrain.width - 1 {
             let index = terrain.index_grid[row][col] as usize;
             let triangle_list = &terrain.cell_edges[index];
 
-            let offset_x = (col * square_size) as f64;
-            let offset_y = (row * square_size) as f64;
+            let offset_x = (col as f64 + 0.5) * square_size;
+            let offset_y = (row as f64 + 0.5) * square_size;
 
             for triangle in triangle_list.chunks(6) {
                 let x_0 = (offset_x + triangle[0] * square_size as f64).round() as usize;
