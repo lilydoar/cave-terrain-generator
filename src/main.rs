@@ -1,5 +1,5 @@
-use color::RED;
-use render::{clear_frame, render_terrain, render_terrain_grid};
+use color::{RED, WHITE};
+use render::{clear_frame, render_string, render_terrain, render_terrain_grid};
 use terrain::Terrain;
 use window::Window;
 use winit::{
@@ -8,6 +8,7 @@ use winit::{
 };
 
 mod color;
+mod font;
 mod render;
 mod terrain;
 mod window;
@@ -16,7 +17,7 @@ fn main() {
     env_logger::init();
 
     // Rendering
-    let screen_size = 800;
+    let screen_size = 1000;
     let (mut window, event_loop) = Window::new(screen_size, screen_size, 1);
 
     // Input
@@ -31,6 +32,8 @@ fn main() {
 
     let mut add_mode = true;
     let mut show_grid = false;
+
+    let instruction_str = "a add mode\ns subtract mode\ng toggle grid\n";
 
     // Event loop
     event_loop.run(move |event, _, control_flow| match event {
@@ -63,6 +66,8 @@ fn main() {
             if show_grid {
                 render_terrain_grid(&mut window.screen, &terrain, &RED);
             }
+
+            render_string(&mut window.screen, instruction_str, 10, 10, 2, &WHITE);
 
             window.screen.draw_frame().unwrap();
         }

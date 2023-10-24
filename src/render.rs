@@ -1,4 +1,8 @@
-use crate::{terrain::Terrain, window::Screen};
+use crate::{
+    font::{get_char_symbol, scale_symbol},
+    terrain::Terrain,
+    window::Screen,
+};
 
 pub fn clear_frame(screen: &mut Screen, color: &[u8; 4]) {
     for pixel in screen.frame_mut().chunks_exact_mut(4) {
@@ -190,4 +194,61 @@ pub fn render_terrain_grid(screen: &mut Screen, terrain: &Terrain, color: &[u8; 
     }
 
     render_grid(screen, square_size, color);
+}
+
+pub fn render_character(
+    screen: &mut Screen,
+    c: char,
+    x: usize,
+    y: usize,
+    scale: usize,
+    color: &[u8; 4],
+) {
+    if c == ' ' || c == '\n' {
+        return;
+    }
+
+    let symbol = get_char_symbol(c);
+    let scaled_symbol = scale_symbol(symbol, scale);
+
+    for row in 0..scaled_symbol.len() {
+        for col in 0..scaled_symbol[0].len() {
+            if scaled_symbol[row][col] > 0 {
+                set_pixel(screen, x + col, y + row, color);
+            }
+        }
+    }
+}
+
+pub fn render_string(
+    screen: &mut Screen,
+    input_str: &str,
+    x: usize,
+    y: usize,
+    scale: usize,
+    color: &[u8; 4],
+) {
+    let horizontal_spacing = 6;
+    let vertical_spacing = 8;
+
+    let mut x_offset = 0;
+    let mut y_offset = 0;
+
+    for c in input_str.chars() {
+        render_character(
+            screen,
+            c,
+            (x + horizontal_spacing * x_offset) * scale,
+            (y + vertical_spacing * y_offset) * scale,
+            scale,
+            color,
+        );
+
+        x_offset += 1;
+
+        if c == '\n' {
+            y_offset += 1;
+            x_offset = 0;
+        }
+    }
 }
